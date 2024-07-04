@@ -54,8 +54,9 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
   void deleteOrder(int orderId) async {
     try {
-      await apiService.deleteOrder(orderId);
+      final result = await apiService.deleteOrder(orderId);
       fetchOrders();
+      print(result);
     } catch (e) {
       print(e);
     }

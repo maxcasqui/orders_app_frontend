@@ -4,9 +4,9 @@ import 'package:orders_app/models/order_model.dart';
 
 class OrderCard extends StatelessWidget {
   final Order order;
-  Function(BuildContext)? deleteFunction;
-  Function(BuildContext)? editFunction;
-  OrderCard({super.key, required this.order, required this.deleteFunction, required this.editFunction});
+  final Function(BuildContext)? deleteFunction;
+  final Function(BuildContext)? editFunction;
+  const OrderCard({super.key, required this.order, required this.deleteFunction, required this.editFunction});
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class OrderCard extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: _getCardColor(order.status),
             borderRadius: BorderRadius.circular(12)
           ),
           child: Padding(
@@ -55,7 +55,7 @@ class OrderCard extends StatelessWidget {
                     Flexible(
                       flex: 1,
                       child: Text(
-                        order.orderDate.toString().split(" ")[0],
+                        order.orderDate.toString(),
                         style: const TextStyle(fontWeight: FontWeight.bold)
                         )
                       )
@@ -78,6 +78,12 @@ class OrderCard extends StatelessWidget {
                     const Text('Final Price: '),
                     Text("S/. ${order.finalPrice}", style: const TextStyle(fontWeight: FontWeight.bold))
                   ],
+                ),
+                Row(
+                  children: [
+                    const Text('Status: '),
+                    Text(order.status, style: const TextStyle(fontWeight: FontWeight.bold))
+                  ],
                 )
               ],
             ),
@@ -85,5 +91,22 @@ class OrderCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color? _getCardColor(String status){
+
+    Color? color = Colors.amber;
+
+    switch (status) {
+      case "in progress":
+        color = Colors.orange;
+        break;
+      case "completed":
+        color = Colors.lightGreen;
+      default:
+      color = Colors.amber.shade300;
+    }
+
+    return color;
   }
 }

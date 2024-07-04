@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:orders_app/components/product_card.dart';
 import 'package:orders_app/models/order_model.dart';
-import '../data/api_service.dart';
-import '../models/product_model.dart';
+import 'package:orders_app/models/product_from_order.dart';
+import 'package:orders_app/data/api_service.dart';
+import 'package:orders_app/models/product_model.dart';
 
 class AddPage extends StatefulWidget {
 
@@ -22,6 +24,7 @@ class _AddPageState extends State<AddPage> {
   late TextEditingController finalPriceController = TextEditingController();
 
   final ApiService apiService = ApiService();
+  List<ProductFromOrder> productFromOrderList = [];
   List<Product> products = [];
   late Product selectedProduct;
   late int quantity;
@@ -40,7 +43,7 @@ class _AddPageState extends State<AddPage> {
   @override
   void initState() {
     super.initState();
-    order = widget.order ?? Order(id: 0, orderNumber: '', orderDate: DateTime.now(), numProducts: 0, finalPrice: 0.0);
+    order = widget.order ?? Order(id: 0, orderNumber: '', orderDate: "", numProducts: 0, finalPrice: 0.0, status: 'pending');
     selectedProduct = Product(productId: 0, productName: '', unitPrice: 0.0);
     quantity = 1;
 
@@ -48,7 +51,12 @@ class _AddPageState extends State<AddPage> {
     orderdateController = TextEditingController(text: order.orderDate.toString());
     productsnumberController = TextEditingController(text: order.numProducts.toString());
     finalPriceController = TextEditingController(text: "S/. ${order.finalPrice}");
+
+    // List of products for combo box on modal
     fetchProducts();
+
+    // List products from an order
+    fetchProductsFromOrder(order.id);
   }
 
   void fetchProducts() async {
@@ -63,19 +71,32 @@ class _AddPageState extends State<AddPage> {
     }
   }
 
-  void addProductToOrder(int orderId, int productId, int quantity) async {
+  void fetchProductsFromOrder(int orderId) async {
     try {
-      await apiService.addProductToOrder(orderId, productId, quantity);
-      print('Product added successfully');
+      final data = await apiService.listProductsFromOrder(orderId);
+      setState(() {
+        productFromOrderList = data;
+      });
     } catch (e) {
       print(e);
     }
   }
 
-  void addOrder(String orderNumber, DateTime orderDate) async {
+  void addProductToOrder(int orderId, int productId, int quantity) async {
     try {
-      await apiService.addOrder(orderNumber, orderDate);
-      print('Product added successfully');
+      final result = await apiService.addProductToOrder(orderId, productId, quantity);
+      // refresh list
+      await apiService.listProductsFromOrder(orderId);
+      print(result);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void createOrder(String orderNumber, String orderDate) async {
+    try {
+      final result = await apiService.createOrder(orderNumber, orderDate);
+      print(result);
     } catch (e) {
       print(e);
     }
@@ -162,6 +183,8 @@ class _AddPageState extends State<AddPage> {
                 productsnumberController.text = newQuantity.toString();
                 finalPriceController.text = "S/. ${newFinalPrice.round()}";
                 addProductToOrder(order.id, selectedProduct.productId, quantity);
+
+                // close modal
                 Navigator.of(context).pop();
               },
               child: const Text('Save'),
@@ -208,21 +231,38 @@ class _AddPageState extends State<AddPage> {
                 controller: finalPriceController,
               ),
               const SizedBox(height: 32),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (existsID){
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
                       _openAddProductModal(context);
-                    } else {
-                      // create order
-                      addOrder(orderNumberController.text.toString(), orderdateController.text as DateTime);
-                      // add product
-                    }
-                  },
-                  child: Text(existsID ? 'Add Product' : 'Create Order'),
-                ),
+                    },
+                    child: const Text('Add Product'),
+                  ),
+                  ElevatedButton(
+                    onPressed: !existsID?() {
+                      _openAddProductModal(context);
+                    }:null,
+                    child: const Text('Create Order'),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
+              SizedBox(
+                height: 400,
+                child: ListView.builder(
+                  itemCount: productFromOrderList.length,
+                  itemBuilder: (context, index) {
+                    return ProductCard(
+                      product: productFromOrderList[index],
+                      deleteFunction: (context) {
+                        
+                      },
+                    );
+                  },
+                ),
+              )
             ],
           ),
         ),
