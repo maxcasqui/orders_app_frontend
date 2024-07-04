@@ -4,6 +4,7 @@ import 'package:orders_app/models/order_model.dart';
 import 'package:orders_app/models/product_from_order.dart';
 import 'package:orders_app/data/api_service.dart';
 import 'package:orders_app/models/product_model.dart';
+import 'package:orders_app/pages/home_page.dart';
 
 class AddPage extends StatefulWidget {
 
@@ -43,7 +44,7 @@ class _AddPageState extends State<AddPage> {
   @override
   void initState() {
     super.initState();
-    order = widget.order ?? Order(id: 0, orderNumber: '', orderDate: "", numProducts: 0, finalPrice: 0.0, status: 'pending');
+    order = widget.order ?? Order(id: 0, orderNumber: '', orderDate: DateTime.now().toString().split(" ")[0], numProducts: 0, finalPrice: 0.0, status: 'pending');
     selectedProduct = Product(productId: 0, productName: '', unitPrice: 0.0);
     quantity = 1;
 
@@ -86,7 +87,18 @@ class _AddPageState extends State<AddPage> {
     try {
       final result = await apiService.addProductToOrder(orderId, productId, quantity);
       // refresh list
-      await apiService.listProductsFromOrder(orderId);
+      fetchProductsFromOrder(orderId);
+      print(result);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void deleteItemFromOrder(int orderItemId, int orderId) async {
+    try {
+      final result = await apiService.deleteItemFromOrder(orderItemId);
+      // refresh list
+      fetchProductsFromOrder(orderId);
       print(result);
     } catch (e) {
       print(e);
@@ -96,6 +108,9 @@ class _AddPageState extends State<AddPage> {
   void createOrder(String orderNumber, String orderDate) async {
     try {
       final result = await apiService.createOrder(orderNumber, orderDate);
+
+      // going back home to show new order created
+      _navigateToHome();
       print(result);
     } catch (e) {
       print(e);
@@ -107,6 +122,15 @@ class _AddPageState extends State<AddPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const AddPage(existsID: false),
+      ),
+    );
+  }
+
+  void _navigateToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomePage(),
       ),
     );
   }
@@ -178,11 +202,13 @@ class _AddPageState extends State<AddPage> {
             ),
             ElevatedButton(
               onPressed: () {
+                addProductToOrder(order.id, selectedProduct.productId, quantity);
+
+                // setting new values to form
                 int newQuantity = int.parse(productsnumberController.text) + quantity;
                 double newFinalPrice = double.parse(finalPriceController.text.split(" ")[1]) + (selectedProduct.unitPrice * quantity);
                 productsnumberController.text = newQuantity.toString();
                 finalPriceController.text = "S/. ${newFinalPrice.round()}";
-                addProductToOrder(order.id, selectedProduct.productId, quantity);
 
                 // close modal
                 Navigator.of(context).pop();
@@ -235,14 +261,14 @@ class _AddPageState extends State<AddPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: existsID?() {
                       _openAddProductModal(context);
-                    },
+                    }:null,
                     child: const Text('Add Product'),
                   ),
                   ElevatedButton(
                     onPressed: !existsID?() {
-                      _openAddProductModal(context);
+                      createOrder(orderNumberController.text, orderdateController.text);
                     }:null,
                     child: const Text('Create Order'),
                   ),
@@ -254,10 +280,18 @@ class _AddPageState extends State<AddPage> {
                 child: ListView.builder(
                   itemCount: productFromOrderList.length,
                   itemBuilder: (context, index) {
+                    final product = productFromOrderList[index];
                     return ProductCard(
-                      product: productFromOrderList[index],
+                      product: product,
                       deleteFunction: (context) {
-                        
+                        deleteItemFromOrder(product.orderItemId, product.orderId);
+
+                        // setting new values to form
+                        int newQuantity = int.parse(productsnumberController.text) - product.quantity;
+                        double newFinalPrice = double.parse(finalPriceController.text.split(" ")[1]) - product.totalPrice;
+                        productsnumberController.text = newQuantity.toString();
+                        finalPriceController.text = "S/. ${newFinalPrice.round()}";
+
                       },
                     );
                   },

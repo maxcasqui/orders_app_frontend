@@ -45,7 +45,7 @@ class ProductCard extends StatelessWidget {
             Row(
               children: [
                 const Text('Total Price: '),
-                Text(product.totalPrice.toString(), style: const TextStyle(fontWeight: FontWeight.bold))
+                Text("S/. ${product.totalPrice}", style: const TextStyle(fontWeight: FontWeight.bold))
               ],
             ),
           ],

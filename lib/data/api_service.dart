@@ -5,7 +5,7 @@ import 'package:orders_app/models/product_from_order.dart';
 import 'package:orders_app/models/product_model.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.1.11:8080/api/v1";
+  static const String baseUrl = "http://192.168.1.8:8080/api/v1";
 
   Future<List<Order>> listOrders() async {
     final response = await http.get(Uri.parse('$baseUrl/orders/list'));
